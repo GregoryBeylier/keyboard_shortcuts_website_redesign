@@ -129,20 +129,30 @@ Ouvrez ensuite une merge request ou une pull request sur la plateforme choisie. 
 
 Les fiches créées par l’API sont des fichiers locaux : leur création ne lance aucun commit et ne les envoie pas sur le dépôt distant.
 
-## Exercice Docker : à réaliser par les élèves
+## Démarrer avec Docker
 
-Aucun Dockerfile ni fichier Compose n’est fourni. La structure se prête à un exercice de développement avec **deux services** :
+Prérequis : Docker avec Docker Compose. Depuis la racine du dépôt :
 
-1. **frontend** : une image Node, installation avec `npm ci`, puis Vite sur le port 5173. Définir `API_PROXY_TARGET=http://api:5000` si le service Flask s’appelle `api`.
-2. **api** : une image Python, installation de `backend/requirements.txt`, puis Flask sur `0.0.0.0:5000`.
-3. **Réseau** : les services se joignent par leur nom Compose. Dans le conteneur frontend, `localhost` désigne le frontend lui-même. Le navigateur continue à appeler `/api` sur le port 5173 via le proxy.
-4. **Persistance** : si le dépôt est copié dans `/app`, monter `./content:/app/content` en lecture-écriture côté API. Ce bind mount conserve les créations après suppression du conteneur et les rend visibles à Git sur l’hôte.
-5. **Développement** : les sources peuvent aussi être montées. Prévoir un volume séparé pour `/app/frontend/node_modules` si le montage du frontend masque les dépendances installées dans l’image.
-6. **Contexte de build** : le chemin de `content/` est calculé par rapport à `backend/app.py`. Conserver ces deux dossiers côte à côte dans l’image. Exclure `.git`, `.venv`, `node_modules` et `dist` avec un `.dockerignore` adapté.
+```bash
+docker compose up --build
+```
 
-C’est un exercice abordable une fois les images, ports, réseaux et montages expliqués. Les principaux pièges sont le `localhost` entre conteneurs, les chemins des montages et les droits d’écriture.
+Ouvrez **http://localhost:5173**. Pour arrêter les services et supprimer les conteneurs :
 
-Un volume nommé persiste aussi, mais ne place pas directement les fichiers dans le checkout Git de l’hôte : le bind mount est donc plus adapté à cet atelier.
+```bash
+docker compose down
+```
+
+La configuration fournie est destinée au développement local :
+
+- **frontend** : Node et Vite sur le port 5173, accessible uniquement depuis la machine hôte. Les dépendances sont installées avec `npm ci` à partir du fichier de verrouillage.
+- **api** : Python et Flask sur le port interne 5000. Le frontend transmet `/api` à `http://api:5000` grâce à `API_PROXY_TARGET`. Dans un conteneur, `localhost` désigne ce conteneur lui-même.
+- **Persistance** : `./content` est monté dans `/app/content` en lecture-écriture côté API. Les fiches créées restent présentes après suppression des conteneurs et sont visibles à Git sur l’hôte. Ce dossier doit rester accessible en écriture dans le conteneur.
+- **Build** : les deux Dockerfiles utilisent la racine du dépôt comme contexte. Le backend conserve `/app/backend` et `/app/content` côte à côte. Le `.dockerignore` exclut notamment Git, les environnements locaux et les dépendances installées sur l’hôte.
+
+Les sources sont copiées dans les images : après une modification du code ou des dépendances, relancez `docker compose up --build`. Les modifications des fiches Markdown sont visibles au prochain chargement, sans reconstruire les images.
+
+Pour prolonger l’exercice, les élèves peuvent ajouter des montages des sources et le rechargement automatique. Un montage du frontend devra préserver les dépendances installées dans le conteneur, par exemple avec un volume séparé pour `/app/frontend/node_modules`.
 
 `npm run build` produit `frontend/dist/`. `npm run preview` sert à prévisualiser ce build et ne reprend pas le proxy de développement configuré ici. Un déploiement de production nécessite un serveur de fichiers statiques, un reverse proxy `/api` et un serveur WSGI pour Flask ; cette configuration reste un prolongement possible du cours.
 

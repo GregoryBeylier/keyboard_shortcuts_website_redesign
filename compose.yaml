@@ -5,9 +5,7 @@ services:
       dockerfile: backend/Dockerfile
 
   frontend:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
+    build: ./frontend
     environment:
       API_PROXY_TARGET: http://api:5000
     ports:

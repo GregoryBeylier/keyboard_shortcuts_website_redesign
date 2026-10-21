@@ -1,11 +1,11 @@
 services:
   api:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
+    image: thomaslaforge/shortcuts-back
+    volumes:
+      - ./content:/app/content
 
   frontend:
-    build: ./frontend
+    image: thomaslaforge/shortcuts-front
     environment:
       API_PROXY_TARGET: http://api:5000
     ports:

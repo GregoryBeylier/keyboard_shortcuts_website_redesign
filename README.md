@@ -4,9 +4,7 @@ Template pédagogique : un site Vite en JavaScript et une API Flask. Les élève
 
 ## Démarrer
 
-Prérequis : Node.js **22.12+** (ou 24 LTS), npm et Python **3.10+**.
-
-Clonez le dépôt quand votre enseignant aura publié son URL :
+Prérequis : Node.js **22.12+** (ou 24/26 LTS), npm et Python **3.10+**.
 
 ```bash
 git clone <URL-DU-DEPOT>
@@ -21,8 +19,6 @@ source .venv/bin/activate
 pip install -r backend/requirements.txt
 flask --app backend/app run --host 0.0.0.0 --port 5000 --debug
 ```
-
-Sous Windows PowerShell, utilisez `python` à la place de `python3` et `.venv\Scripts\Activate.ps1` pour activer l’environnement.
 
 Dans un second terminal :
 

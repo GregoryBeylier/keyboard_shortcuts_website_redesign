@@ -134,7 +134,8 @@ Les fiches créées par l’API sont des fichiers locaux : leur création ne lan
 Prérequis : Docker avec Docker Compose. Depuis la racine du dépôt :
 
 ```bash
-docker compose up --build
+docker compose pull
+docker compose up -d
 ```
 
 Ouvrez **http://localhost:5173**. Pour arrêter les services et supprimer les conteneurs :
@@ -148,9 +149,15 @@ La configuration fournie est destinée au développement local :
 - **frontend** : Node et Vite sur le port 5173, accessible uniquement depuis la machine hôte. Les dépendances sont installées avec `npm ci` à partir du fichier de verrouillage.
 - **api** : Python et Flask sur le port interne 5000. Le frontend transmet `/api` à `http://api:5000` grâce à `API_PROXY_TARGET`. Dans un conteneur, `localhost` désigne ce conteneur lui-même.
 - **Persistance** : `./content` est monté dans `/app/content` en lecture-écriture côté API. Les fiches créées restent présentes après suppression des conteneurs et sont visibles à Git sur l’hôte. Ce dossier doit rester accessible en écriture dans le conteneur.
-- **Build** : les deux Dockerfiles utilisent la racine du dépôt comme contexte. Le backend conserve `/app/backend` et `/app/content` côte à côte. Le `.dockerignore` exclut notamment Git, les environnements locaux et les dépendances installées sur l’hôte.
+- **Images** : Compose utilise `thomaslaforge/shortcuts-back:latest` et `thomaslaforge/shortcuts-front:latest` publiées sur Docker Hub. Pour une construction locale, le Dockerfile backend utilise la racine du dépôt comme contexte et celui du frontend utilise `frontend/`. Le backend conserve `/app/backend` et `/app/content` côte à côte.
 
-Les sources sont copiées dans les images : après une modification du code ou des dépendances, relancez `docker compose up --build`. Les modifications des fiches Markdown sont visibles au prochain chargement, sans reconstruire les images.
+Les sources sont copiées dans les images : après publication d’une nouvelle version, relancez `docker compose pull` puis `docker compose up -d`. Les modifications des fiches Markdown sont visibles au prochain chargement, sans reconstruire les images.
+
+### Publier les images sur Docker Hub
+
+Le workflow `.github/workflows/dockerhub.yml` construit et publie les deux images à chaque push sur `main`. Il peut aussi être lancé manuellement depuis l’onglet **Actions**, sur `main`. Chaque image reçoit les tags `latest` et `sha-<SHA complet du commit>`.
+
+Dans les paramètres du dépôt GitHub, ouvrez **Secrets and variables → Actions**, puis ajoutez le secret **DOCKERHUB_TOKEN** : un jeton d’accès Docker Hub du compte `thomaslaforge` autorisé à écrire dans les dépôts `shortcuts-back` et `shortcuts-front`.
 
 Pour prolonger l’exercice, les élèves peuvent ajouter des montages des sources et le rechargement automatique. Un montage du frontend devra préserver les dépendances installées dans le conteneur, par exemple avec un volume séparé pour `/app/frontend/node_modules`.
 

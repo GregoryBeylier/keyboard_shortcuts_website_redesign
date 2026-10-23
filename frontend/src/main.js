@@ -7,6 +7,18 @@ import './style.css';
 const app = document.querySelector('#app');
 let navigation = 0;
 
+const addButton = document.querySelector('#add-shortcut-btn');
+
+function updateAdminButton() {
+  const isAdmin = sessionStorage.getItem('isAdmin') === 'true';
+
+  if (addButton) {
+    addButton.style.display = isAdmin ? 'inline-block' : 'none';
+  }
+}
+
+updateAdminButton();
+
 function showIndex(shortcuts) {
   app.innerHTML = `
     <p class="eyebrow">LE SAVOIR DE LA CLASSE</p>
@@ -48,8 +60,19 @@ async function route() {
   app.innerHTML = '<p role="status">Chargement des fiches…</p>';
   try {
     if (path === '/nouveau') {
-      showForm(app);
-    } else if (path === '/') {
+  if (!isAdmin) {
+    app.innerHTML = `
+      <div class="notice" role="alert">
+        <h1>Accès réservé</h1>
+        <p>Seul un administrateur connecté peut créer une fiche.</p>
+        <a href="#/">Retour au sommaire</a>
+      </div>
+    `;
+    return;
+  }
+
+  showForm(app);
+} else if (path === '/') {
       const shortcuts = await api();
       if (current !== navigation) return;
       showIndex(shortcuts);

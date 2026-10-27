@@ -1,9 +1,10 @@
 ---
-title: "Effacer le début de la ligne"
-description: "Corriger une commande dans le terminal en une combinaison."
-keys: "Ctrl + U"
-category: "Terminal"
+category: Terminal
+description: Corriger une commande dans le terminal en une combinaison.
+keys: Ctrl + U
+title: Effacer le début de la ligne
 ---
+
 ## Faire place nette
 
 Dans un terminal avec Bash ou Zsh et les raccourcis Emacs habituels, **Ctrl + U** efface le texte entre le début de la ligne et le curseur.

@@ -1,0 +1,39 @@
+services:
+  api:
+    image: shortcuts-back-local
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      DB_HOST: db
+      DB_USER: carnet
+      DB_PASSWORD: mdp-de-test
+      DB_NAME: raccourcis
+      SECRET_KEY: 445c06fd426ad90f2916689bef1bfd048f0ada39a89306c48331fb2615eb8559
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    image: shortcuts-front-local
+    build:
+      context: ./frontend
+
+  db:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: root-de-test
+      MARIADB_DATABASE: raccourcis
+      MARIADB_USER: carnet
+      MARIADB_PASSWORD: mdp-de-test
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  db-data:

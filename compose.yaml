@@ -25,7 +25,7 @@ services:
       - db
 
   frontend:
-    image: thomaslaforge/shortcuts-front
+    build: ./frontend
     environment:
       API_PROXY_TARGET: http://api:5000
     ports:

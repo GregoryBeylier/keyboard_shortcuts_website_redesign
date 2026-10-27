@@ -2,10 +2,39 @@ import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { api, escapeHtml as e } from './api.js';
 import { showForm } from './new-shortcut.js';
+import { renderAdminLogin } from './admin-login.js';
 import './style.css';
+import { showEditForm } from './edit-shortcut.js';
 
 const app = document.querySelector('#app');
 let navigation = 0;
+
+const authStatus = document.createElement('div');
+authStatus.id = 'auth-status';
+app.before(authStatus);
+
+async function updateAuthStatus() {
+  try {
+    const response = await fetch('/api/admin/me');
+    const { isAdmin } = await response.json();
+    if (isAdmin) {
+      authStatus.innerHTML = `
+        <span class="admin-badge">Connecté en tant qu’Admin</span>
+        <button id="logout" type="button" class="btn">Déconnexion</button>`;
+      document.querySelector('#logout').addEventListener('click', async () => {
+        await fetch('/api/admin/logout', { method: 'POST' });
+        location.hash = '#/';
+        route();
+      });
+    } else {
+      authStatus.innerHTML = '<a class="btn" href="#/admin">Connexion administrateur</a>';
+    }
+    return isAdmin;
+  } catch {
+    authStatus.textContent = '';
+    return false;
+  }
+}
 
 function showIndex(shortcuts) {
   app.innerHTML = `
@@ -31,24 +60,46 @@ function showIndex(shortcuts) {
   });
 }
 
-function showShortcut(shortcut) {
+function showShortcut(shortcut, isAdmin = false) {
   app.innerHTML = `
     <a class="back" href="#/">← Retour au sommaire</a>
     <article class="detail"><span class="category">${e(shortcut.category)}</span>
       <h1>${e(shortcut.title)}</h1><p class="intro">${e(shortcut.description)}</p>
-      <kbd>${e(shortcut.keys)}</kbd><div id="markdown" class="markdown"></div>
+      <kbd>${e(shortcut.keys)}</kbd>
+      ${isAdmin ? `<div class="admin-actions">
+        <a class="btn" href="#/modifier/${encodeURIComponent(shortcut.slug)}">✏️ Modifier</a>
+        <button id="delete" type="button" class="btn danger">🗑️ Supprimer</button>
+      </div>` : ''}
+      <div id="markdown" class="markdown"></div>
     </article>`;
   // Le Markdown est du contenu externe : nettoyer le HTML avant de l'insérer.
   document.querySelector('#markdown').innerHTML = DOMPurify.sanitize(marked.parse(shortcut.content));
+
+  document.querySelector('#delete')?.addEventListener('click', async () => {
+    if (!confirm(`Supprimer la fiche « ${shortcut.title} » ?`)) return;
+    const response = await fetch(`/api/shortcuts/${encodeURIComponent(shortcut.slug)}`, { method: 'DELETE' });
+    if (response.ok) location.hash = '#/';
+    else alert('Suppression impossible.');
+  });
 }
+
+
 
 async function route() {
   const current = ++navigation;
+  const isAdmin = await updateAuthStatus();
+  if (current !== navigation) return;
   const path = location.hash.slice(1) || '/';
   app.innerHTML = '<p role="status">Chargement des fiches…</p>';
   try {
-    if (path === '/nouveau') {
+    if (path === '/admin') {
+      renderAdminLogin(app);
+    } else if (path === '/nouveau') {
       showForm(app);
+    } else if (/^\/modifier\/[^/]+$/.test(path)) {
+      if (!isAdmin) throw new Error('Accès réservé à l’administrateur.');
+      await showEditForm(app, decodeURIComponent(path.split('/')[2]));
+      if (current !== navigation) return;
     } else if (path === '/') {
       const shortcuts = await api();
       if (current !== navigation) return;
@@ -56,7 +107,7 @@ async function route() {
     } else if (/^\/raccourci\/[^/]+$/.test(path)) {
       const shortcut = await api(`/${encodeURIComponent(decodeURIComponent(path.split('/')[2]))}`);
       if (current !== navigation) return;
-      showShortcut(shortcut);
+      showShortcut(shortcut, isAdmin);
     } else {
       throw new Error('Cette page n’existe pas.');
     }
